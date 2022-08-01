@@ -1,0 +1,155 @@
+openapi: 3.0.3
+info:
+  title: API documentation
+  contact:
+    name: Shop Apotheke
+    url: https://www.shop-apotheke.com
+    email: info@shop-apotheke.com
+  description: API Server
+  license:
+    name: private
+  termsOfService: 'www.shop-apotheke.com'
+  version: 1.0.0
+servers:
+  -description: default
+  url: 'https://{host}/{cacheable}'
+  variables:
+    cacheable:
+      enum:
+        - cacheable
+        - static
+      default: cacheable
+    host:
+      enum:
+        - api.sa-tech.de
+      default: api.sa-tech.de
+
+paths:
+  '/auth/v1/{tenant}/login':
+  post:
+    parameters:
+      -allowEmptyValue: false
+      deprecated: false
+      description: ControllerParam tenant
+      in: path
+      name: tenant
+      required: true
+      schema:
+        enum:
+          - at
+          - ch
+          - com
+          - fr
+          - es
+          - it
+        type: string
+      -$ref: '#/components/parameters/customer-authentication-device-type-header'
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/LoginRequest_v1'
+      required: true
+    responses:
+      '201':
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginResponse_v1'
+        description: SuccessResponse
+      '400':
+        $ref: '#/components/responses/BadRequest-authentication'
+      '504':
+        $ref: '#/components/responses/504'
+    tags:
+      - AuthController
+components:
+  parameters:
+    customer-authentication-device-type-header:
+      deprecated: false
+      in: header
+      name: Sae-Device-Type
+      required: false
+      schema:
+        enum:
+          - browser
+          - iosApp
+          - androidApp
+        type: string
+        example: 'browser'
+        default: 'browser'
+        description: >-
+          Describes the type of a device that is used to access the API. Defaults to Browser if none is specified
+  schemas:
+    LoginRequest_v1:
+      example:
+        customerNumber: '123456789'
+        password: aA1!bB2@cC3#dD4$
+      properties:
+        customerNumber:
+          type: string
+        password:
+          type: string
+    LoginResponse_v1:
+      example:
+        token:
+          eyJhbGciOiJSUzM4NCJ9.ewogICJzdWIiOiAiMTExOTg5OTM0IiwKICAicm9sZSI6ICJSRUdJU1RFUkVEIiwKICAidGVuYW50IjogImNvbS1xcyIsCiAgInR5cGUiOiAiQUNDRVNTIiwKICAia2V5VmVyc2lvbiI6ICJjMjQ1MzVlOC0yMzQyLTQ2N2QtODVmYy1jNmJkYWIxZDY4MmUiLAogICJleHAiOiA5NjA1ODg1MDc3LAogICJleHBSZWZyZXNoIjogIjIwMjItMTEtMTlUMTU6MTY6MTcuODY2WiIsCiAgImp0aSI6ICI1NzljZjk5OC1kNjBkLTQ2YTktOWNlNi1iYmE5ODJjY2YzZDMiLAogICJpc3MiOiAiYXV0aC5yZWR0ZWNsYWIuY29tIiwKICAiaWF0IjogMTYwNTc5ODY3Nwp9
+        tokenType: bearer
+      properties:
+        tokenType:
+          type: string
+        token:
+          type: string
+    Authentication400:
+      properties:
+        statusCode:
+          type: number
+        error:
+          type: string
+        message:
+          type: string
+        invalidParams:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvalidParam'
+        example:
+          statusCode: 400
+          error: Bad Request
+          message: Validation Exception
+          invalidParams:
+            - field: password
+              key: parameter.error.empty
+      GatewayTimeout:
+        properties:
+          statusCode:
+            type: number
+          error:
+            type: string
+          message:
+            type: string
+          example:
+            statusCode: 504
+            error: Gateway timed out
+            message: Connection to service timed out
+          InvalidParam:
+            properties:
+              field:
+                type: string
+              key:
+                type: string
+              example:
+                field: subscriptionType
+                key: mailing.subscription.missing.mandatory.field
+        responses:
+          BadRequest-authentication:
+            description: Bad Request
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Authentication400'
+          '504':
+            description: Gateway Timeout
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/GatewayTimeout'
